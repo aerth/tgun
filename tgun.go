@@ -1,3 +1,7 @@
+// Copyright 2017 The tgun Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // package tgun provides a TCP/http(s) client with common options
 package tgun
 
@@ -6,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -29,6 +34,7 @@ type Client struct {
 	mu            sync.RWMutex
 }
 
+// Get returns an http response
 func (c *Client) Get(url string) (*http.Response, error) {
 	if err := c.refresh(); err != nil {
 		return nil, err
@@ -46,6 +52,7 @@ func (c *Client) Get(url string) (*http.Response, error) {
 	return c.httpClient.Do(req)
 }
 
+// Get returns an http response body in the form of bytes
 func (c *Client) GetBytes(url string) ([]byte, error) {
 	resp, err := c.Get(url)
 	if err != nil {
@@ -65,6 +72,7 @@ func getDialer(proxyurl string) (proxy.Dialer, error) {
 		return proxy.Direct, nil
 	}
 	if proxyurl == "tor" {
+		fmt.Fprintln(os.Stderr, "Using default tor address:", defaultTor)
 		proxyurl = defaultTor
 	}
 
@@ -110,6 +118,7 @@ func (c *Client) refresh() error {
 		Jar:       nil,
 	}
 
+	// create redirect policy
 	redirectPolicyFunc := func(req *http.Request, reqs []*http.Request) error {
 		req.Header.Set("User-Agent", c.UserAgent)
 		return nil
