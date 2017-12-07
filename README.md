@@ -27,4 +27,4 @@ b, err := dialer.GetBytes("https://example.org")
 
 ```
 
-See [[tgun_test.go]] for more examples.
+See [tgun_test.go](tgun_test.go) for more examples.
