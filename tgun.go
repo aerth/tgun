@@ -10,15 +10,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
-	"sync"
 	"time"
 
 	"golang.org/x/net/proxy"
 )
 
 const (
-	defaultUserAgent = "aerth_tgun/0.1"
+	version          = "0.1.2"
+	defaultUserAgent = "aerth_tgun/" + version
 	defaultProxy     = "socks5://127.0.0.1:1080"
 	defaultTor       = "socks5://127.0.0.1:9050"
 )
@@ -28,10 +27,11 @@ type Client struct {
 	Proxy         string // In the format: socks5://localhost:1080
 	UserAgent     string // In the format: "MyThing/0.1" or "MyThing/0.1 (http://example.org)"
 	Timeout       time.Duration
+	AuthUser      string
+	AuthPassword  string
 	Headers       map[string]string
 	httpClient    *http.Client
 	dialer        proxy.Dialer
-	mu            sync.RWMutex
 }
 
 // Get returns an http response
@@ -48,7 +48,11 @@ func (c *Client) Get(url string) (*http.Response, error) {
 			req.Header.Set(k, v)
 		}
 	}
-	req.Header.Set("User-Agent", c.UserAgent) // should go first?
+	if c.AuthUser != "" && c.AuthPassword != "" {
+		req.SetBasicAuth(c.AuthUser, c.AuthPassword)
+	}
+	req.Header.Set("User-Agent", c.UserAgent)
+
 	return c.httpClient.Do(req)
 }
 
@@ -67,13 +71,16 @@ func (c *Client) GetBytes(url string) ([]byte, error) {
 }
 
 func getDialer(proxyurl string) (proxy.Dialer, error) {
-	// check for keywords
+
 	if proxyurl == "" {
 		return proxy.Direct, nil
 	}
+	// check for keywords
 	if proxyurl == "tor" {
-		fmt.Fprintln(os.Stderr, "Using default tor address:", defaultTor)
 		proxyurl = defaultTor
+	}
+	if proxyurl == "1080" {
+		proxyurl = defaultProxy
 	}
 
 	u, err := url.Parse(proxyurl)

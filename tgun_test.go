@@ -208,5 +208,35 @@ func TestDirect(t *testing.T) {
 		fmt.Println(err)
 		t.Fail()
 	}
+}
 
+func TestSimpleAuth(t *testing.T) {
+	dialer := &Client{
+		Proxy:        "",
+		UserAgent:    "Testing/1.2",
+		AuthUser:     "user1",
+		AuthPassword: "password321",
+	}
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok {
+			t.Log("Expected to use user1:password321 for authenticated request, not okay")
+			t.Fail()
+			return
+
+		}
+		if user != "user1" || pass != "password321" {
+			t.Log("Expected to use user1:password321 for authenticated request")
+			t.Fail()
+			return
+		}
+
+	}
+	ts := httptest.NewServer(http.HandlerFunc(handler))
+
+	_, err := dialer.GetBytes(ts.URL)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
 }
