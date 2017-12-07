@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// package tgun provides a TCP/http(s) client with common options
+// Package tgun provides a TCP/http(s) client with common options
 package tgun
 
 import (
@@ -20,13 +20,17 @@ const (
 	defaultUserAgent = "aerth_tgun/" + version
 	defaultProxy     = "socks5://127.0.0.1:1080"
 	defaultTor       = "socks5://127.0.0.1:9050"
+
+	// DefaultTimeout is used if c.Timeout is not set
+	DefaultTimeout = time.Second * 3
 )
 
+// Client holds connection options
 type Client struct {
-	DirectConnect bool   // Set to true to bypass proxy
-	Proxy         string // In the format: socks5://localhost:1080
-	UserAgent     string // In the format: "MyThing/0.1" or "MyThing/0.1 (http://example.org)"
-	Timeout       time.Duration
+	DirectConnect bool          // Set to true to bypass proxy
+	Proxy         string        // In the format: socks5://localhost:1080
+	UserAgent     string        // In the format: "MyThing/0.1" or "MyThing/0.1 (http://example.org)"
+	Timeout       time.Duration // If unset, DefaultTimeout is used.
 	AuthUser      string
 	AuthPassword  string
 	Headers       map[string]string
@@ -34,7 +38,32 @@ type Client struct {
 	dialer        proxy.Dialer
 }
 
-// Get returns an http response
+// Do returns an http response
+func (c *Client) Do(req *http.Request) (*http.Response, error) {
+	// Refresh http client, proxy
+	if err := c.refresh(); err != nil {
+		return nil, err
+	}
+	// Set Headers
+	if c.Headers != nil {
+		for k, v := range c.Headers {
+			req.Header.Set(k, v)
+		}
+	}
+
+	// Set Basic Auth
+	if c.AuthUser != "" && c.AuthPassword != "" {
+		req.SetBasicAuth(c.AuthUser, c.AuthPassword)
+	}
+
+	// Set User Agent
+	req.Header.Set("User-Agent", c.UserAgent)
+
+	// Do request
+	return c.httpClient.Do(req)
+}
+
+// Get connects returns an http response
 func (c *Client) Get(url string) (*http.Response, error) {
 	if err := c.refresh(); err != nil {
 		return nil, err
@@ -43,20 +72,11 @@ func (c *Client) Get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if c.Headers != nil {
-		for k, v := range c.Headers {
-			req.Header.Set(k, v)
-		}
-	}
-	if c.AuthUser != "" && c.AuthPassword != "" {
-		req.SetBasicAuth(c.AuthUser, c.AuthPassword)
-	}
-	req.Header.Set("User-Agent", c.UserAgent)
 
-	return c.httpClient.Do(req)
+	return c.Do(req)
 }
 
-// Get returns an http response body in the form of bytes
+// GetBytes connects and returns an http response body in the form of bytes
 func (c *Client) GetBytes(url string) ([]byte, error) {
 	resp, err := c.Get(url)
 	if err != nil {
@@ -112,6 +132,10 @@ func (c *Client) refresh() error {
 
 	if c.UserAgent == "" {
 		c.UserAgent = defaultUserAgent
+	}
+
+	if c.Timeout == 0 {
+		c.Timeout = DefaultTimeout
 	}
 
 	transport, err := c.getTransport()

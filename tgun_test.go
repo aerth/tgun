@@ -133,7 +133,7 @@ func TestTor(t *testing.T) {
 	}
 	torline := "Congratulations. This browser is configured to use Tor."
 	if strings.Contains(string(b), torline) {
-		fmt.Println(torline)
+		fmt.Println("Success:", torline)
 		return
 	}
 
@@ -153,14 +153,12 @@ func TestSOCKS(t *testing.T) {
 
 	b, err := dialer.GetBytes("http://icanhazip.com")
 	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
-			fmt.Println(err)
-			fmt.Println("Test Failed. Check your connection and make sure SOCKS5 proxy is listening on 1080.")
-			t.FailNow()
-		}
+		fmt.Println(err)
+		fmt.Println("Test Failed. Check your connection and make sure SOCKS5 proxy is listening on 1080.")
+		t.FailNow()
 	}
 
-	fmt.Println("SUCCESS:", string(b))
+	fmt.Println("Success on 1080:", string(b))
 
 }
 
@@ -193,16 +191,13 @@ func TestBadProxyString(t *testing.T) {
 
 }
 
+// TestDirect actually direct connects (no proxy)
 func TestDirect(t *testing.T) {
 	dialer := &Client{
-		Proxy:     "",
 		UserAgent: "Testing/1.2",
 	}
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// no handle
-	}
+	handler := func(w http.ResponseWriter, r *http.Request) {}
 	ts := httptest.NewServer(http.HandlerFunc(handler))
-
 	_, err := dialer.GetBytes(ts.URL)
 	if err != nil {
 		fmt.Println(err)
@@ -210,6 +205,7 @@ func TestDirect(t *testing.T) {
 	}
 }
 
+// TestSimpleAuth sends auth information with request
 func TestSimpleAuth(t *testing.T) {
 	dialer := &Client{
 		Proxy:        "",
@@ -220,13 +216,13 @@ func TestSimpleAuth(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
 		if !ok {
-			t.Log("Expected to use user1:password321 for authenticated request, not okay")
+			t.Log("Expected to use user1:password321 for authenticated request, got \"not okay\"")
 			t.Fail()
 			return
 
 		}
 		if user != "user1" || pass != "password321" {
-			t.Log("Expected to use user1:password321 for authenticated request")
+			t.Log("Expected to use user1:password321 for authenticated request, got:", user, pass)
 			t.Fail()
 			return
 		}
@@ -239,4 +235,17 @@ func TestSimpleAuth(t *testing.T) {
 		fmt.Println(err)
 		t.Fail()
 	}
+}
+
+// TestBadRequest returns an error before connection
+func TestBadRequest(t *testing.T) {
+	badurl := "www.example.org" // should have a protocol scheme (such as http)
+	dialer := &Client{}
+	_, err := dialer.Get(badurl)
+	if err == nil {
+		t.Log("Expected an error, got none.")
+		t.FailNow()
+	}
+	t.Log(t.Name(), "Pass:", err)
+
 }

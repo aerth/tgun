@@ -2,9 +2,11 @@
 
 ### a tcp client with common options
 
-  * Use Proxy (http, socks4, socks5, tor)
-  * Use Custom UserAgent (even during redirects)
-  * Set headers
+  * Use **Proxy** (http, socks4, socks5, tor)
+  * Use custom **UserAgent** (even during redirects)
+  * Set **headers**
+  * Use **simple authentication**
+  * Custom timeout
 
 ```
 // set headers if necessary
@@ -24,3 +26,5 @@ dialer := tgun.Client{
 b, err := dialer.GetBytes("https://example.org")
 
 ```
+
+See [[tgun_test.go]] for more examples.
