@@ -22,7 +22,7 @@ const (
 	defaultTor       = "socks5://127.0.0.1:9050"
 
 	// DefaultTimeout is used if c.Timeout is not set
-	DefaultTimeout = time.Second * 3
+	DefaultTimeout = time.Second * 30
 )
 
 // Client holds connection options
