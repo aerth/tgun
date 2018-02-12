@@ -10,20 +10,31 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime"
 	"time"
 
 	"golang.org/x/net/proxy"
 )
 
-const (
-	version          = "0.1.2"
-	defaultUserAgent = "aerth_tgun/" + version
-	defaultProxy     = "socks5://127.0.0.1:1080"
-	defaultTor       = "socks5://127.0.0.1:9050"
+const version = "0.1.3"
 
-	// DefaultTimeout is used if c.Timeout is not set
-	DefaultTimeout = time.Second * 30
-)
+// DefaultTimeout is used if c.Timeout is not set
+var DefaultTimeout = time.Second * 30
+
+// DefaultProxy is used when c.Proxy is "1080" or "socks" or "proxy" or "true" or "1"
+var DefaultProxy = "socks5://127.0.0.1:1080"
+
+// DefaultUserAgent is used when c.UserAgent is empty
+var DefaultUserAgent = fmt.Sprintf("tgun/%s", version)
+
+// DefaultTor proxy is used when c.Proxy is set to "tor"
+var DefaultTor = func() string {
+	if runtime.GOOS == "windows" {
+		return "socks5://127.0.0.1:9150"
+	}
+
+	return "socks5://127.0.0.1:9050"
+}()
 
 // Client holds connection options
 type Client struct {
@@ -38,16 +49,25 @@ type Client struct {
 	dialer        proxy.Dialer
 }
 
-// Do returns an http response
+// HTTPClient returns a http.Client with proxy (but no headers, auth, user-agent)
+func (c Client) HTTPClient() (*http.Client, error) {
+	err := c.refresh()
+	return c.httpClient, err
+}
+
+// Do returns an http response.
+// The request's config is *fortified* with http.Client, proxy, headers, authentication, and user agent.
+//
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	// Refresh http client, proxy
 	if err := c.refresh(); err != nil {
 		return nil, err
 	}
-	// Set Headers
+
+	// Create request headers using tgun.Client config
 	if c.Headers != nil {
-		for k, v := range c.Headers {
-			req.Header.Set(k, v)
+		for header, value := range c.Headers {
+			req.Header.Set(header, value)
 		}
 	}
 
@@ -56,10 +76,10 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		req.SetBasicAuth(c.AuthUser, c.AuthPassword)
 	}
 
-	// Set User Agent
+	// Set User Agent, over previous headers
 	req.Header.Set("User-Agent", c.UserAgent)
 
-	// Do request
+	// Do with new http client request
 	return c.httpClient.Do(req)
 }
 
@@ -90,17 +110,15 @@ func (c *Client) GetBytes(url string) ([]byte, error) {
 	return b, err
 }
 
+// getDialer is called by proxify to return a proxy.Dialer
 func getDialer(proxyurl string) (proxy.Dialer, error) {
-
-	if proxyurl == "" {
+	switch proxyurl {
+	case "":
 		return proxy.Direct, nil
-	}
-	// check for keywords
-	if proxyurl == "tor" {
-		proxyurl = defaultTor
-	}
-	if proxyurl == "1080" {
-		proxyurl = defaultProxy
+	case "tor":
+		proxyurl = DefaultTor
+	case "socks", "1080", "proxy", "true", "1":
+		proxyurl = DefaultProxy
 	}
 
 	u, err := url.Parse(proxyurl)
@@ -108,15 +126,11 @@ func getDialer(proxyurl string) (proxy.Dialer, error) {
 		return nil, err
 	}
 
-	px, err := proxy.FromURL(u, proxy.Direct)
-	if err != nil {
-		return nil, err
-	}
-
-	return px, nil
+	return proxy.FromURL(u, proxy.Direct)
 }
 
-func (c *Client) getTransport() (*http.Transport, error) {
+// proxify is called by refresh to return a *http.Transport
+func (c *Client) proxify() (*http.Transport, error) {
 	t := &http.Transport{}
 	dialer, err := getDialer(c.Proxy)
 	if err != nil {
@@ -124,41 +138,47 @@ func (c *Client) getTransport() (*http.Transport, error) {
 	}
 	c.dialer = dialer
 	t.Dial = c.dialer.Dial
-
 	return t, nil
 }
 
+// refresh gets called every time we use any method of Client
+// its responsibility is:
+//	to sanity check the tgun.Client config
+//  to apply c.Proxy, and fix redirect useragent/header leak.
 func (c *Client) refresh() error {
-
+	// default user agent
 	if c.UserAgent == "" {
-		c.UserAgent = defaultUserAgent
+		c.UserAgent = DefaultUserAgent
 	}
 
+	// default timeout
 	if c.Timeout == 0 {
 		c.Timeout = DefaultTimeout
 	}
 
-	transport, err := c.getTransport()
+	// create transport
+	transport, err := c.proxify()
 	if err != nil {
 		return err
 	}
 
+	// forge http client
 	httpClient := &http.Client{
 		Transport: transport,
 		Timeout:   c.Timeout,
 		Jar:       nil,
 	}
 
-	// create redirect policy
-	redirectPolicyFunc := func(req *http.Request, reqs []*http.Request) error {
+	// create redirect policy to set UA even during redirects
+	httpClient.CheckRedirect = func(req *http.Request, reqs []*http.Request) error {
+		for h, v := range c.Headers {
+			req.Header.Set(h, v)
+		}
 		req.Header.Set("User-Agent", c.UserAgent)
 		return nil
 	}
 
-	// set UA
 	c.httpClient = httpClient
 
-	// set UA even during redirects
-	c.httpClient.CheckRedirect = redirectPolicyFunc
 	return nil
 }

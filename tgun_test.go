@@ -55,8 +55,8 @@ func TestEmptyUserAgent(t *testing.T) {
 	}
 	var i = 0
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		if r.UserAgent() != defaultUserAgent {
-			fmt.Println("It should be:", defaultUserAgent)
+		if r.UserAgent() != DefaultUserAgent {
+			fmt.Println("It should be:", DefaultUserAgent)
 			fmt.Printf("Your User Agent is: %q\n", r.UserAgent())
 			fmt.Println(r.URL.String())
 			t.FailNow()
