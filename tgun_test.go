@@ -249,3 +249,58 @@ func TestBadRequest(t *testing.T) {
 	t.Log(t.Name(), "Pass:", err)
 
 }
+
+type githubRepoT struct {
+	ID              int    `json:"id"`
+	NodeID          string `json:"node_id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	URL             string `json:"url"`
+	Size            int    `json:"size"`
+	StargazersCount int    `json:"stargazers_count"`
+	WatchersCount   int    `json:"watchers_count"`
+	//	SubscribersCount int    `json:"subscribers_count"`
+}
+
+// curl -H "Accept: application/vnd.github.v3+json" \
+//   https://api.github.com/repos/octocat/hello-world
+func TestJSON(t *testing.T) {
+	client := &Client{}
+	endpoint := "api.github.com"
+	u := "https://" + client.Join(endpoint, "repos", "aerth", "tgun")
+	var githubRepo githubRepoT
+	if err := client.Unmarshal(u, &githubRepo); err != nil {
+		t.Errorf("%v", err)
+		return
+	}
+	fmt.Printf("%s (%d ★ %d 👓)\n",
+		githubRepo.Name,
+		githubRepo.StargazersCount,
+		githubRepo.WatchersCount)
+}
+
+func TestJoin(t *testing.T) {
+	type testcase []string
+	// "https://" + Join("api.example.com/v1", "users")
+	// "https://" + Join("api.example.com", "v1", "users")
+	// Join("http://", "example.com", "index.php")
+	// Join("http://api.example.com/v1", "users")
+	// Join("http://api.example.com", "v1", "users")
+
+	for _, tc := range []testcase{
+		testcase{"api.example.com/v1", "users", "api.example.com/v1/users"},
+		testcase{"api.example.com", "v1", "users", "api.example.com/v1/users"},
+		testcase{"https://", "api.example.com/v1", "users", "https://api.example.com/v1/users"},
+		testcase{"https://api.example.com/v1", "users", "https://api.example.com/v1/users"},
+		testcase{"https://api.example.com", "v1", "users", "https://api.example.com/v1/users"},
+	} {
+		//
+		i := len(tc) - 1
+		got := Join(tc[:i]...)
+		want := string(tc[i])
+		if got != want {
+			t.Errorf("wanted %q, got %q", want, got)
+		}
+		println(got)
+	}
+}

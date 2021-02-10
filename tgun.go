@@ -6,17 +6,21 @@
 package tgun
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"runtime"
+	"strings"
 	"time"
 
 	"golang.org/x/net/proxy"
 )
 
-const version = "0.1.3"
+const version = "0.1.5"
 
 // DefaultTimeout is used if c.Timeout is not set
 var DefaultTimeout = time.Second * 30
@@ -55,6 +59,41 @@ func (c Client) HTTPClient() (*http.Client, error) {
 	return c.httpClient, err
 }
 
+func Join(s ...string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	if len(s) == 1 {
+		return s[0]
+	}
+
+	// "https://" + Join("api.example.com/v1", "users")
+	// "https://" + Join("api.example.com", "v1", "users")
+	if !strings.Contains(s[0], "://") {
+		return path.Join(s...)
+	}
+
+	// Join("http://", "example.com", "index.php")
+	// Join("http://api.example.com/v1", "users")
+	// Join("http://api.example.com", "v1", "users")
+
+	if strings.HasSuffix(s[0], "://") {
+		s[1] = s[0] + s[1]
+		s = s[1:]
+	}
+
+	u, err := url.Parse(s[0])
+	if err != nil {
+		return ""
+	}
+	u.Path = path.Join(append([]string{u.Path}, s[1:]...)...)
+	return u.String()
+}
+
+func (c *Client) Join(s ...string) string {
+	return Join(s...)
+}
+
 // Do returns an http response.
 // The request's config is *fortified* with http.Client, proxy, headers, authentication, and user agent.
 //
@@ -81,6 +120,37 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 
 	// Do with new http client request
 	return c.httpClient.Do(req)
+}
+
+// Unmarshal JSON (GET, no body)
+func (c *Client) Unmarshal(url string, ptr interface{}) error {
+	return c.unmarshal(url, http.MethodGet, ptr, nil)
+}
+
+// Unmarshal JSON (POST, with body param)
+func (c *Client) UnmarshalPost(url string, ptr interface{}, body io.Reader) error {
+	return c.unmarshal(url, http.MethodPost, ptr, body)
+}
+
+func (c *Client) unmarshal(url string, method string, ptr interface{}, body io.Reader) error {
+	if err := c.refresh(); err != nil {
+		return err
+	}
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return err
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+	err = json.NewDecoder(resp.Body).Decode(ptr)
+	if err != nil {
+		resp.Body.Close()
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 // Get connects returns an http response
