@@ -95,13 +95,18 @@ func (c *Client) Join(s ...string) string {
 	return Join(s...)
 }
 
-// Dial (TCP) an address using c.Proxy if set
-func (c *Client) Dial(addr string) (net.Conn, error) {
+// DialTCP an address using c.Proxy if set
+func (c *Client) DialTCP(addr string) (net.Conn, error) {
+	return c.Dial("tcp", addr)
+}
+
+// Dial an address using c.Proxy if set
+func (c *Client) Dial(network string, addr string) (net.Conn, error) {
 	// Refresh http client, proxy
 	if err := c.refresh(); err != nil {
 		return nil, err
 	}
-	return c.dialer.Dial("tcp", addr)
+	return c.dialer.Dial(network, addr)
 }
 
 // Do returns an http response.
