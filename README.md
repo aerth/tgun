@@ -1,6 +1,6 @@
 # tgun
 
-### a tcp client with common options
+### a http and tcp client with common options
 
   * Use **Proxy** (http, socks4, socks5, tor)
   * Use custom **UserAgent** (even during redirects)
@@ -18,7 +18,7 @@ headers := map[string]string{
 // set user agent and proxy in the initialization
 dialer := tgun.Client{
   Proxy:     "socks5://localhost:1080",
-  UserAgent: "CBaser/0.1 (https://github.com/aerth/cbaser)",
+  UserAgent: "MyCrawler/0.1 (https://github.com/user/repo)",
   Headers:   headers,
 }
 

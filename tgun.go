@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -94,9 +95,17 @@ func (c *Client) Join(s ...string) string {
 	return Join(s...)
 }
 
+// Dial (TCP) an address using c.Proxy if set
+func (c *Client) Dial(addr string) (net.Conn, error) {
+	// Refresh http client, proxy
+	if err := c.refresh(); err != nil {
+		return nil, err
+	}
+	return c.dialer.Dial("tcp", addr)
+}
+
 // Do returns an http response.
 // The request's config is *fortified* with http.Client, proxy, headers, authentication, and user agent.
-//
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	// Refresh http client, proxy
 	if err := c.refresh(); err != nil {
@@ -207,7 +216,11 @@ func getDialer(proxyurl string) (proxy.Dialer, error) {
 // proxify is called by refresh to return a *http.Transport
 func (c *Client) proxify() (*http.Transport, error) {
 	t := &http.Transport{}
-	dialer, err := getDialer(c.Proxy)
+	proxypath := c.Proxy
+	if c.DirectConnect {
+		proxypath = ""
+	}
+	dialer, err := getDialer(proxypath)
 	if err != nil {
 		return nil, fmt.Errorf("Dialer Error: %s", err.Error())
 	}

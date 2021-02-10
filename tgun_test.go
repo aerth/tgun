@@ -7,6 +7,7 @@ package tgun
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -302,5 +303,41 @@ func TestJoin(t *testing.T) {
 			t.Errorf("wanted %q, got %q", want, got)
 		}
 		println(got)
+	}
+}
+
+func TestDialer(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:8080")
+	if err != nil {
+		panic(err)
+	}
+	ch := make(chan []byte)
+	go func(ch chan []byte) {
+		conn, err := l.Accept()
+		if err != nil {
+			panic(err)
+		}
+		buf := make([]byte, 4)
+		n, err := conn.Read(buf)
+		if err != nil {
+			panic(err)
+		}
+		ch <- buf[:n]
+	}(ch)
+	c := &Client{Proxy: ""}
+	conn, err := c.Dial("127.0.0.1:8080")
+	if err != nil {
+		t.Errorf("err: %v", err)
+		return
+	}
+	_, err = conn.Write([]byte("hi\n"))
+	if err != nil {
+		t.Errorf("err: %v", err)
+		return
+	}
+	got := <-ch
+	t.Logf("got: %s (%02x)", string(got), got)
+	if string(got) != "hi\n" {
+		t.FailNow()
 	}
 }
