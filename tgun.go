@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-const version = "0.1.5"
+const version = "0.1.6"
 
 // DefaultTimeout is used if c.Timeout is not set
 var DefaultTimeout = time.Second * 30
@@ -144,10 +144,15 @@ func (c *Client) unmarshal(url string, method string, ptr interface{}, body io.R
 	if err != nil {
 		return err
 	}
-	err = json.NewDecoder(resp.Body).Decode(ptr)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		resp.Body.Close()
 		return err
+	}
+	err = json.Unmarshal(b, ptr)
+	if err != nil {
+		resp.Body.Close()
+		return fmt.Errorf("%d: %s", resp.StatusCode, string(b))
 	}
 	resp.Body.Close()
 	return nil
