@@ -28,3 +28,22 @@ b, err := dialer.GetBytes("https://example.org")
 ```
 
 See [tgun_test.go](tgun_test.go) for more examples.
+
+### c usage
+
+harness tgun in your c application!
+
+first `make` in plugin directory, creating `tgun.a tgun.so tgun.h` and an example `tgun` curl-like application.
+
+```
+#include <tgun.h>
+
+int main(){
+    char* b = get_url("http://example.org")
+    printf("%s", b);
+    free(b);
+}
+
+```
+
+see [plugin](plugin) directory for c usage example
