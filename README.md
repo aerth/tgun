@@ -39,9 +39,20 @@ first `make` in plugin directory, creating `tgun.a tgun.so tgun.h` and an exampl
 #include <tgun.h>
 
 int main(){
-    char* b = get_url("http://example.org")
-    printf("%s", b);
-    free(b);
+    // set user-agent
+    easy_ua("libtgun/1.0");
+    // set proxy url, or alias 'tor' (9050 or 9150 depending on platform) or 'socks' (127.0.0.1:1080)
+    easy_proxy("tor");
+    char* b = get_url("http://example.org");
+
+    // if any errors, NULL is returned and an error is waiting
+    if (!b) {
+      fprintf(stderr, "error: %s\n", tgunerr());    
+    } else {
+      // normal string, do something with it, then free().
+      printf("%s", b);
+      free(b);
+    }
 }
 
 ```

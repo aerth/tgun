@@ -17,5 +17,6 @@ clean:
 install:
 	install tgun.a /usr/local/lib/libtgun.a
 	install tgun.so /usr/local/lib/libtgun.so
-	install tgun.h /usr/include/tgun.h
+	mkdir -p /usr/local/include
+	install tgun.h /usr/local/include/tgun.h
 	@echo now can use -ltgun to link and '#include <tgun.h>'
