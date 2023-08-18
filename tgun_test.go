@@ -325,7 +325,7 @@ func TestDialer(t *testing.T) {
 		ch <- buf[:n]
 	}(ch)
 	c := &Client{Proxy: ""}
-	conn, err := c.Dial("127.0.0.1:8080")
+	conn, err := c.DialTCP("127.0.0.1:8080")
 	if err != nil {
 		t.Errorf("err: %v", err)
 		return
