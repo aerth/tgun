@@ -12,8 +12,8 @@ tgun.exe: example_c/example.c tgun.dll.a
 	${cross_compiler} -static ${CFLAGS} -o $@ -I. $^
 tgun: tgun-static
 	mv $^ $@
-tgun-shared: example_c/example.c tgun.so
-	${CC} ${CFLAGS} -o $@ -I. $^
+tgun-shared: example_c/example.c
+	${CC} ${CFLAGS} -o $@ -I. $^ -ltgun
 tgun-static: example_c/example.c tgun.a
 	${CC} -static ${CFLAGS} -o $@ -I. $^
 tgun-trig-error: example_c/example_error.c tgun.a
