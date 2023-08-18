@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -26,7 +27,7 @@ var state = struct {
 	useragent: os.Getenv("USER_AGENT"),
 }
 
-var Version = "0.0.1"
+var Version = "0.0.2"
 
 //export version
 func version() *C.char {
@@ -67,6 +68,66 @@ func tgunerr() *C.char {
 	esc := C.CString(es)
 	state.errs = esc
 	return esc
+}
+
+func toMethod(s string) string {
+	s = strings.ToUpper(s)
+	switch s {
+	case "", http.MethodGet:
+		return http.MethodGet
+	default:
+		return s
+	}
+}
+
+//export tgun_do
+// tgun_do copies response body directly to file instead of memory
+func tgun_do(method *C.char, url *C.char, headers *C.char, output_filename *C.char) int {
+	//fmt.Printf("tgun_do: url=%q m=%q h=%q o=%q\n", C.GoString(url), C.GoString(method), C.GoString(headers), C.GoString(output_filename))
+	headermap := parseHeaders(headers)
+	t := tgun.Client{
+		Headers:   headermap,
+		Proxy:     state.proxy,
+		UserAgent: state.useragent,
+	}
+	req, err := http.NewRequest(toMethod(C.GoString(method)), C.GoString(url), nil)
+	if err != nil {
+		state.err = err
+		return 1
+	}
+
+	resp, err := t.Do(req)
+	if err != nil {
+		state.err = err
+		return 1
+	}
+
+	defer resp.Body.Close()
+	var outputFile *os.File
+	var outputFilename string
+	if output_filename != nil {
+		outputFilename = C.GoString(output_filename)
+	}
+	switch outputFilename {
+	case "", "1", "stdout":
+		outputFile = os.Stdout
+	case "2", "stderr":
+		outputFile = os.Stderr
+	default:
+		outputFile, err = os.OpenFile(outputFilename, os.O_CREATE|os.O_RDWR, 0600)
+		if err != nil {
+			state.err = err
+			return 1
+		}
+		defer outputFile.Close()
+	}
+	_, err = io.Copy(outputFile, resp.Body)
+	if err != nil {
+		state.err = err
+		return 1
+	}
+
+	return 0
 }
 
 // (remember to free())

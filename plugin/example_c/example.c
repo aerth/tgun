@@ -5,13 +5,14 @@
 
 char *headerconfig = NULL;
 
-int do_tgun(char *url){
+
+int do_tgun_mem(char *url){
   char* b = get_url_headers(url, headerconfig);
   if (!b) {
     printf("err: %s\n", tgunerr());
     return 1;
   }
-  printf("%s\n", b);
+  printf("%s", b);
   free(b);
   return 0;
 }
@@ -31,12 +32,15 @@ example: 127.0.0.1:9050 socks5 proxy, custom UA and headers
 flags:
   -h --help
   -t --tor (port 9150 or 9050 depending on platform)
+  -o --output (port 9150 or 9050 depending on platform)
   -p --proxy  eg: socks5://127.0.0.1:1080 ($PROXY env)
   --ua user-agent
   --headers   eg: foo=bar;bar=foo
 )";
 
 int main(int argc, char **argv){
+  char *headerconfig = NULL;
+  char *fileoutname = NULL;
   int c;
   while (1) {
     int option_index = 0;
@@ -46,10 +50,11 @@ int main(int argc, char **argv){
       {"proxy",  required_argument,       0,  0 },
       {"ua",  required_argument,       0,  0 },
       {"headers",    required_argument, 0,  0 },
+      {"output", required_argument, 0, 0 },
       {0,         0,                 0,  0 }
     };
 
-    c = getopt_long(argc, argv, "htp:",
+    c = getopt_long(argc, argv, "htpo:",
         long_options, &option_index);
     if (c == -1)
       break;
@@ -60,6 +65,9 @@ int main(int argc, char **argv){
           case 0:
             fprintf(stderr,"%s\n", usage);
             return 1;
+          case 1:
+            easy_proxy("tor");
+            goto Again;
           case 2:
             easy_proxy(optarg);
             goto Again;
@@ -72,6 +80,10 @@ int main(int argc, char **argv){
 #ifdef DEBUG
             fprintf(stderr, "header config: %s\n", headerconfig);
 #endif
+            goto Again;
+          case 5:
+            fileoutname = malloc(1024);
+            strncpy(fileoutname, optarg, 1024);
             goto Again;
           default:
             printf("option %d:%s\n", option_index, long_options[option_index].name);
@@ -89,6 +101,10 @@ int main(int argc, char **argv){
       case 'p':
         easy_proxy(optarg);
         break;
+      case 'o':
+        fileoutname = malloc(1024);
+        strncpy(fileoutname, optarg, 1024);
+        break;
       case '?':
         return 1;
       default:
@@ -103,5 +119,11 @@ Again:
     return 1;
   }
   char *url =  argv[optind++];
-  return do_tgun(url);
+  int ret;
+  ret = tgun_do("get", url, headerconfig, fileoutname);
+  if (ret != 0) {
+    printf("err %d: %s",ret, tgunerr());
+    return ret;
+  }
+  return 0;
 }
