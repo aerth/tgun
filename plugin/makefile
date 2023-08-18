@@ -4,6 +4,8 @@ goflags := -v -tags netgo,osusergo -ldflags '-w -s'
 all: tgun.so tgun.a tgun
 tgun: example_c/example.c tgun.a
 	${CC} -static ${CFLAGS} -o $@ -I. $^
+tgun-trig-error: example_c/example_error.c tgun.a
+	${CC} -static ${CFLAGS} -o $@ -I. $^
 tgun.so: *.go
 	go build ${goflags} -buildmode c-shared -o $@
 	chmod +x tgun.so
@@ -15,8 +17,9 @@ a.out: example_c/example_error.c tgun.a
 clean:
 	${RM} tgun.a tgun.h tgun.so tgun
 install:
-	install tgun.a /usr/local/lib/libtgun.a
-	install tgun.so /usr/local/lib/libtgun.so
-	mkdir -p /usr/local/include
-	install tgun.h /usr/local/include/tgun.h
+	mkdir -p /usr/local/include /usr/local/lib /usr/local/bin
+	test ! -x tgun || install -v tgun /usr/local/bin/tgun
+	install -v tgun.a /usr/local/lib/libtgun.a
+	install -v tgun.so /usr/local/lib/libtgun.so
+	install -v tgun.h /usr/local/include/tgun.h
 	@echo now can use -ltgun to link and '#include <tgun.h>'

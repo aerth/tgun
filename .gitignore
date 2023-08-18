@@ -3,4 +3,5 @@
 *.so
 *.h
 /plugin/tgun
+/plugin/tgun-trig-error
 /tgun

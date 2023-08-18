@@ -1,5 +1,5 @@
 #include <tgun.h>
-
+#include <stdio.h>
 // example usage
 int using_tgun(char *url){
   char* b = get_url(url);
