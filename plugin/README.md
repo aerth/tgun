@@ -23,3 +23,24 @@ int using_tgun(char *url){
 }
 
 ```
+
+
+## usage
+
+
+tgun frees existing error strings 
+
+// tgunerr();
+
+if you already printed the error, it is still in memory until calling tgunerr() again
+
+```c
+if (!tgun_do(...)){
+  printf("error: %s\n", tgunerr());
+}
+if (!tgun_do(...)){
+  printf("error: %s\n", tgunerr()); // frees previous error string
+  tgunerr(); // safely frees last string if necessary
+}
+```
+

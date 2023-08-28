@@ -1,1 +1,3 @@
 tgun*
+*.user
+/build

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,9 +13,11 @@ import (
 )
 
 /*
-#include <stdlib.h>
+#include <stdlib.h> // for free()
 */
 import "C"
+
+var DEBUG = os.Getenv("DEBUG") != "" // same as -v flag
 
 // global in your application for now
 var state = struct {
@@ -29,23 +32,31 @@ var state = struct {
 
 var Version = "0.0.2"
 
-//export version
-func version() *C.char {
+//export tgun_version
+func tgun_version() *C.char {
 	return C.CString(Version)
 }
 
 // sets proxy string for future requests (example: "socks5://127.0.0.1:1080" or "tor")
 //
-//export easy_proxy
-func easy_proxy(proxystring *C.char) {
+//export tgun_easy_proxy
+func tgun_easy_proxy(proxystring *C.char) {
 	state.proxy = C.GoString(proxystring)
 }
 
 // sets user agent for future requests
 //
-//export easy_ua
-func easy_ua(useragent *C.char) {
+//export tgun_easy_ua
+func tgun_easy_ua(useragent *C.char) {
 	state.useragent = C.GoString(useragent)
+}
+
+// sets verbose (log requests and response status code to stderr)
+//
+//export tgun_easy_verbose
+func tgun_easy_verbose(n C.int) {
+	cond := int(n) != 0
+	DEBUG = cond
 }
 
 // displays latest error *and clears it*
@@ -57,6 +68,7 @@ func easy_ua(useragent *C.char) {
 func tgunerr() *C.char {
 	if state.errs != nil { // definitely old err
 		C.free(unsafe.Pointer(state.errs))
+		state.errs = nil
 	}
 	if state.err == nil {
 		return nil
@@ -70,6 +82,7 @@ func tgunerr() *C.char {
 	return esc
 }
 
+// toMethod helper (default GET)
 func toMethod(s string) string {
 	s = strings.ToUpper(s)
 	switch s {
@@ -80,17 +93,31 @@ func toMethod(s string) string {
 	}
 }
 
-//export tgun_do
+var NULL = C.NULL
+
 // tgun_do copies response body directly to file instead of memory
+//export tgun_do
 func tgun_do(method *C.char, url *C.char, headers *C.char, output_filename *C.char) int {
-	//fmt.Printf("tgun_do: url=%q m=%q h=%q o=%q\n", C.GoString(url), C.GoString(method), C.GoString(headers), C.GoString(output_filename))
+	return tgun_do_body(method, url, headers, output_filename, nil)
+}
+
+// tgun_do_body sends body and copies response body directly to file instead of memory
+//export tgun_do_body
+func tgun_do_body(method *C.char, url *C.char, headers *C.char, output_filename *C.char, body *C.char) int {
+	if DEBUG {
+		fmt.Fprintf(os.Stderr, "tgun_do: url=%q m=%q h=%q o=%q\n", C.GoString(url), C.GoString(method), C.GoString(headers), C.GoString(output_filename))
+	}
 	headermap := parseHeaders(headers)
 	t := tgun.Client{
 		Headers:   headermap,
 		Proxy:     state.proxy,
 		UserAgent: state.useragent,
 	}
-	req, err := http.NewRequest(toMethod(C.GoString(method)), C.GoString(url), nil)
+	var rdr io.Reader
+	if body != nil {
+		rdr = strings.NewReader(C.GoString(body)) // could be expensive
+	}
+	req, err := http.NewRequest(toMethod(C.GoString(method)), C.GoString(url), rdr)
 	if err != nil {
 		state.err = err
 		return 1
@@ -132,15 +159,18 @@ func tgun_do(method *C.char, url *C.char, headers *C.char, output_filename *C.ch
 
 // (remember to free())
 //
-//export get_url
-func get_url(url *C.char) *C.char {
-	return get_url_headers(url, nil)
+//export tgun_get_url
+func tgun_get_url(url *C.char) *C.char {
+	return tgun_get_url_headers(url, nil)
 }
 
 // (remember to free())
 //
-//export get_url_headers
-func get_url_headers(url *C.char, headers *C.char) *C.char {
+//export tgun_get_url_headers
+func tgun_get_url_headers(url *C.char, headers *C.char) *C.char {
+	if DEBUG {
+		fmt.Fprintf(os.Stderr, "tgun_do: url=%q m=%q h=%q o=%q\n", C.GoString(url), "GET", C.GoString(headers))
+	}
 	headermap := parseHeaders(headers)
 	t := tgun.Client{
 		Headers:   headermap,
@@ -159,8 +189,11 @@ func get_url_headers(url *C.char, headers *C.char) *C.char {
 // or multiple: accept=foo=bar
 // (remember to free())
 //
-//export post_url
-func post_url(url *C.char, bodyString *C.char, headers *C.char) *C.char {
+//export tgun_post_url
+func tgun_post_url(url *C.char, bodyString *C.char, headers *C.char) *C.char {
+	if DEBUG {
+		fmt.Fprintf(os.Stderr, "tgun_post_url: url=%q m=%q h=%q o=%q\n", C.GoString(url), "POST", C.GoString(headers))
+	}
 	u := C.GoString(url)
 	headermap := parseHeaders(headers)
 	t := tgun.Client{

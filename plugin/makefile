@@ -6,6 +6,7 @@ all: libraries tgun
 libraries: tgun.so tgun.a
 windows: tgun.dll tgun.dll.a tgun.exe
 
+
 # binaries
 tgun.exe: example_c/example.c tgun.dll.a
 	# cross compile win library
