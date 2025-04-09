@@ -33,7 +33,7 @@ flags:
   -h --help
   -t --tor (port 9150 or 9050 depending on platform)
   -o --output (port 9150 or 9050 depending on platform)
-  -p --proxy  eg: socks5://127.0.0.1:1080 ($PROXY env)
+  -p --proxy  eg: socks5h://127.0.0.1:1080 ($PROXY env)
   --ua user-agent
   --headers   eg: foo=bar;bar=foo
 )";

@@ -148,7 +148,7 @@ func TestSOCKS(t *testing.T) {
 		return
 	}
 	dialer := &Client{
-		Proxy:     "socks5://127.0.0.1:1080",
+		Proxy:     "socks5h://127.0.0.1:1080",
 		UserAgent: "Testing/1.2",
 	}
 
@@ -178,13 +178,13 @@ func TestBadProxyString(t *testing.T) {
 		t.FailNow()
 	}
 
-	dialer.Proxy = "example.com" // wrong format, needs socks5://socks.com
+	dialer.Proxy = "example.com" // wrong format, needs socks5h://socks.com
 	_, err = dialer.GetBytes(ts.URL)
 	if err == nil {
 		t.FailNow()
 	}
 
-	dialer.Proxy = "example.org:1080" // wrong format, needs socks5://socks.com
+	dialer.Proxy = "example.org:1080" // wrong format, needs socks5h://socks.com
 	_, err = dialer.GetBytes(ts.URL)
 	if err == nil {
 		t.FailNow()

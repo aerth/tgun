@@ -34,7 +34,7 @@ func version() *C.char {
 	return C.CString(Version)
 }
 
-// sets proxy string for future requests (example: "socks5://127.0.0.1:1080" or "tor")
+// sets proxy string for future requests (example: "socks5h://127.0.0.1:1080" or "tor" or "socks" or "")
 //
 //export easy_proxy
 func easy_proxy(proxystring *C.char) {

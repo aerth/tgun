@@ -27,7 +27,7 @@ const version = "0.1.6"
 var DefaultTimeout = time.Second * 30
 
 // DefaultProxy is used when c.Proxy is "1080" or "socks" or "proxy" or "true" or "1"
-var DefaultProxy = "socks5://127.0.0.1:1080"
+var DefaultProxy = "socks5h://127.0.0.1:1080"
 
 // DefaultUserAgent is used when c.UserAgent is empty
 var DefaultUserAgent = fmt.Sprintf("tgun/%s", version)
@@ -35,16 +35,16 @@ var DefaultUserAgent = fmt.Sprintf("tgun/%s", version)
 // DefaultTor proxy is used when c.Proxy is set to "tor"
 var DefaultTor = func() string {
 	if runtime.GOOS == "windows" {
-		return "socks5://127.0.0.1:9150"
+		return "socks5h://127.0.0.1:9150"
 	}
 
-	return "socks5://127.0.0.1:9050"
+	return "socks5h://127.0.0.1:9050"
 }()
 
 // Client holds connection options
 type Client struct {
 	DirectConnect bool          // Set to true to bypass proxy
-	Proxy         string        // In the format: socks5://localhost:1080
+	Proxy         string        // In the format: socks5h://localhost:1080
 	UserAgent     string        // In the format: "MyThing/0.1" or "MyThing/0.1 (http://example.org)"
 	Timeout       time.Duration // If unset, DefaultTimeout is used.
 	AuthUser      string
