@@ -17,7 +17,7 @@ headers := map[string]string{
 
 // set user agent and proxy in the initialization
 dialer := tgun.Client{
-  Proxy:     "socks5://localhost:1080",
+  Proxy:     "socks5h://localhost:1080",
   UserAgent: "MyCrawler/0.1 (https://github.com/user/repo)",
   Headers:   headers,
 }

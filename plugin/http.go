@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/aerth/tgun"
@@ -51,10 +52,22 @@ func easy_ua(useragent *C.char) {
 	state.useragent = C.GoString(useragent)
 }
 
-// displays latest error *and clears it*
+// sets timeout for future requests
+//
+//export easy_timeout
+func easy_timeout(num_milli C.size_t) {
+	d := time.Duration(num_milli)
+	if d == 0 {
+		tgun.DefaultTimeout = time.Second * 30
+		return
+	}
+	tgun.DefaultTimeout = d * time.Millisecond
+}
+
+// displays latest error ONCE *and clears it*
 // DONT free it, it gets freed next call, so just call it again as a void fn.
 //
-// not safe in general.
+// very useful but not safe in general.
 //
 //export tgunerr
 func tgunerr() *C.char {

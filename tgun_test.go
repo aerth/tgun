@@ -252,32 +252,42 @@ func TestBadRequest(t *testing.T) {
 }
 
 type githubRepoT struct {
-	ID              int    `json:"id"`
-	NodeID          string `json:"node_id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	URL             string `json:"url"`
-	Size            int    `json:"size"`
-	StargazersCount int    `json:"stargazers_count"`
-	WatchersCount   int    `json:"watchers_count"`
+	Owner           struct{ Login string } `json:"owner"`
+	ID              int                    `json:"id"`
+	NodeID          string                 `json:"node_id"`
+	Name            string                 `json:"name"`
+	Description     string                 `json:"description"`
+	URL             string                 `json:"url"`
+	Size            int                    `json:"size"`
+	StargazersCount int                    `json:"stargazers_count"`
+	WatchersCount   int                    `json:"watchers_count"`
 	//	SubscribersCount int    `json:"subscribers_count"`
 }
 
-// curl -H "Accept: application/vnd.github.v3+json" \
-//   https://api.github.com/repos/octocat/hello-world
+//	curl -H "Accept: application/vnd.github.v3+json" \
+//	  https://api.github.com/repos/octocat/hello-world
 func TestJSON(t *testing.T) {
-	client := &Client{}
-	endpoint := "api.github.com"
-	u := "https://" + client.Join(endpoint, "repos", "aerth", "tgun")
-	var githubRepo githubRepoT
-	if err := client.Unmarshal(u, &githubRepo); err != nil {
-		t.Errorf("%v", err)
-		return
+	client := &Client{
+		Headers: map[string]string{
+			"Accept": "application/vnd.github.v3+json",
+		},
 	}
-	fmt.Printf("%s (%d ★ %d 👓)\n",
-		githubRepo.Name,
-		githubRepo.StargazersCount,
-		githubRepo.WatchersCount)
+	endpoint := "https://api.github.com"
+	var githubRepo githubRepoT
+
+	for _, repo := range []string{"aerth/tgun", "torvalds/linux"} {
+		if err := client.Unmarshal(client.Join(endpoint, "repos", repo), &githubRepo); err != nil {
+			t.Errorf("%v", err)
+			return
+		}
+
+		fmt.Printf("% 10s/% -10s (% 7d ★ % 7d 👓)\n",
+			githubRepo.Owner.Login,
+			githubRepo.Name,
+			githubRepo.StargazersCount,
+			githubRepo.WatchersCount)
+	}
+
 }
 
 func TestJoin(t *testing.T) {

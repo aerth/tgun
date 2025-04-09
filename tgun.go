@@ -21,6 +21,8 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+const version = "0.1.7"
+
 // Version of tgun library
 func Version() string {
 	return version
@@ -239,8 +241,9 @@ func (c *Client) proxify() (*http.Transport, error) {
 
 // refresh gets called every time we use any method of Client
 // its responsibility is:
-//	to sanity check the tgun.Client config
-//  to apply c.Proxy, and fix redirect useragent/header leak.
+//
+//		to sanity check the tgun.Client config
+//	 to apply c.Proxy, and fix redirect useragent/header leak.
 func (c *Client) refresh() error {
 	// default user agent
 	if c.UserAgent == "" {
