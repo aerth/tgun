@@ -21,7 +21,10 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-const version = "0.1.6"
+// Version of tgun library
+func Version() string {
+	return version
+}
 
 // DefaultTimeout is used if c.Timeout is not set
 var DefaultTimeout = time.Second * 30
