@@ -31,7 +31,13 @@ var Version = "0.0.2"
 
 //export version
 func version() *C.char {
-	return C.CString(Version)
+	println("deprecated: use tgunversion()")
+	return C.CString(tgun.Version())
+}
+
+//export tgunversion
+func tgunversion() *C.char {
+	return C.CString(tgun.Version())
 }
 
 // sets proxy string for future requests (example: "socks5h://127.0.0.1:1080" or "tor" or "socks" or "")
