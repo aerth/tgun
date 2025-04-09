@@ -21,7 +21,7 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-const version = "0.1.7"
+const version = "0.1.8"
 
 // Version of tgun library
 func Version() string {
