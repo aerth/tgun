@@ -5,17 +5,6 @@
 
 char *headerconfig = NULL;
 
-// print to stdout
-int do_tgun_mem(char *url){
-    char* b = get_url_headers(url, headerconfig);
-    if (!b) {
-        printf("err: %s\n", tgunerr());
-        return 1;
-    }
-    printf("%s", b);
-    free(b);
-    return 0;
-}
 
 char *logotext = "  _\n"
                  " | |_ __ _ _   _ _ __\n"
