@@ -26,8 +26,6 @@ var state = struct {
 	useragent: os.Getenv("USER_AGENT"),
 }
 
-var Version = "0.0.2"
-
 //export version
 func version() *C.char {
 	println("deprecated: use tgunversion()")
