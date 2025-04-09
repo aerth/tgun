@@ -91,8 +91,11 @@ int main(int argc, char **argv){
             }
             break;
         case 'c':
-            int timeout = atoi(optarg);
-            easy_timeout(timeout);
+            if (!atoi(optarg)){
+                fprintf(stderr, "weird timeout number: %s\n", optarg);
+                return 142;
+            }
+            easy_timeout(atoi(optarg));
             break;
         case '?':
             free(fileoutname);
