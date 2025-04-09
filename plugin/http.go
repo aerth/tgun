@@ -86,8 +86,9 @@ func toMethod(s string) string {
 	}
 }
 
-//export tgun_do
 // tgun_do copies response body directly to file instead of memory
+//
+//export tgun_do
 func tgun_do(method *C.char, url *C.char, headers *C.char, output_filename *C.char) int {
 	//fmt.Printf("tgun_do: url=%q m=%q h=%q o=%q\n", C.GoString(url), C.GoString(method), C.GoString(headers), C.GoString(output_filename))
 	headermap := parseHeaders(headers)
