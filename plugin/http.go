@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -185,7 +184,7 @@ func post_url(url *C.char, bodyString *C.char, headers *C.char) *C.char {
 		state.err = err
 		return nil
 	}
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		state.err = err
 		return nil
