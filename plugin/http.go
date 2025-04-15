@@ -27,12 +27,6 @@ var state = struct {
 	useragent: os.Getenv("USER_AGENT"),
 }
 
-//export version
-func version() *C.char {
-	println("deprecated: use tgunversion()")
-	return C.CString(tgun.Version())
-}
-
 //export tgunversion
 func tgunversion() *C.char {
 	return C.CString(tgun.Version())
