@@ -34,9 +34,9 @@ tgun.dll:
 clean:
 	${RM} tgun*
 install:
-	mkdir -p /usr/local/include /usr/local/lib /usr/local/bin
-	test ! -x tgun || install -v tgun /usr/local/bin/tgun
-	install -v tgun.a /usr/local/lib/libtgun.a
-	install -v tgun.so /usr/local/lib/libtgun.so
-	install -v tgun.h /usr/local/include/tgun.h
+	mkdir -p ${DESTDIR}/usr/local/include ${DESTDIR}/usr/local/lib ${DESTDIR}/usr/local/bin
+	install -v tgun.a ${DESTDIR}/usr/local/lib/libtgun.a
+	install -v tgun.so ${DESTDIR}/usr/local/lib/libtgun.so
+	install -v tgun.h ${DESTDIR}/usr/local/include/tgun.h
+	test ! -x tgun || install -v tgun ${DESTDIR}/usr/local/bin/tgun
 	@echo now can use -ltgun to link and '#include <tgun.h>'

@@ -1,0 +1,11 @@
+Source: tgun
+Maintainer: aerth <aerth@riseup.net>
+Section: misc
+Priority: optional
+Package: tgun
+Architecture: all
+Version: X.Y.Z
+Homepage: https://github.com/aerth/tgun
+Description: |
+  tgun c library uses golang networking to 
+  replace libcurl in some basic situations.
